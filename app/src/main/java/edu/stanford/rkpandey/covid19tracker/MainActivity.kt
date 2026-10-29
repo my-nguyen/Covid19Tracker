@@ -8,7 +8,7 @@ import androidx.annotation.ColorRes
 import androidx.core.content.ContextCompat
 import com.google.gson.GsonBuilder
 import com.robinhood.ticker.TickerUtils
-import kotlinx.android.synthetic.main.activity_main.*
+import edu.stanford.rkpandey.covid19tracker.databinding.ActivityMainBinding
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -22,10 +22,11 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val TAG = "MainActivity"
-        const val BASE_URL = "https://covidtracking.com/api/v1/"
+        const val BASE_URL = "https://api.covidtracking.com/v1/"
         const val ALL_STATES = "All (Nationwide)"
     }
 
+    private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: CovidSparkAdapter
     private lateinit var currentlyShownData: List<CovidData>
     private lateinit var perStateDailyData: Map<String, List<CovidData>>
@@ -33,7 +34,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         supportActionBar?.title = getString(R.string.app_description)
 
         val gson = GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss").create()
@@ -101,8 +103,8 @@ class MainActivity : AppCompatActivity() {
         val stateAbbreviationList = stateNames.toMutableList()
         stateAbbreviationList.sort()
         stateAbbreviationList.add(0, ALL_STATES)
-        spinnerSelect.attachDataSource(stateAbbreviationList)
-        spinnerSelect.setOnSpinnerItemSelectedListener { parent, _, position, _ ->
+        binding.spinnerSelect.attachDataSource(stateAbbreviationList)
+        binding.spinnerSelect.setOnSpinnerItemSelectedListener { parent, _, position, _ ->
             val selectedState = parent.getItemAtPosition(position) as String
             val selectedData = perStateDailyData[selectedState] ?: nationalDailyData
             updateDisplayWithData(selectedData)
@@ -110,16 +112,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupEventListeners() {
-        sparkView.isScrubEnabled = true
-        sparkView.setScrubListener { itemData ->
+        binding.sparkView.isScrubEnabled = true
+        binding.sparkView.setScrubListener { itemData ->
             if (itemData is CovidData) {
                 updateInfoForDate(itemData)
             }
         }
-        tickerView.setCharacterLists(TickerUtils.provideNumberList())
+        binding.tickerView.setCharacterLists(TickerUtils.provideNumberList())
 
         // Respond to radio button selected events
-        radioGroupTimeSelection.setOnCheckedChangeListener { _, checkedId ->
+        binding.radioGroupTimeSelection.setOnCheckedChangeListener { _, checkedId ->
             adapter.daysAgo = when (checkedId) {
                 R.id.radioButtonWeek -> TimeScale.WEEK
                 R.id.radioButtonMonth -> TimeScale.MONTH
@@ -129,7 +131,7 @@ class MainActivity : AppCompatActivity() {
             updateInfoForDate(currentlyShownData.last())
             adapter.notifyDataSetChanged()
         }
-        radioGroupMetricSelection.setOnCheckedChangeListener { _, checkedId ->
+        binding.radioGroupMetricSelection.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.radioButtonNegative -> updateDisplayMetric(Metric.NEGATIVE)
                 R.id.radioButtonPositive -> updateDisplayMetric(Metric.POSITIVE)
@@ -146,8 +148,8 @@ class MainActivity : AppCompatActivity() {
             Metric.DEATH -> R.color.colorDeath
         }
         @ColorInt val colorInt = ContextCompat.getColor(this, colorRes)
-        sparkView.lineColor = colorInt
-        tickerView.textColor = colorInt
+        binding.sparkView.lineColor = colorInt
+        binding.tickerView.textColor = colorInt
 
         // Update metric on the adapter
         adapter.metric = metric
@@ -161,10 +163,10 @@ class MainActivity : AppCompatActivity() {
         currentlyShownData = dailyData
         // Create a new SparkAdapter with the data
         adapter = CovidSparkAdapter(dailyData)
-        sparkView.adapter = adapter
+        binding.sparkView.adapter = adapter
         // Update radio buttons to select positive cases and max time by default
-        radioButtonPositive.isChecked = true
-        radioButtonMax.isChecked = true
+        binding.radioButtonPositive.isChecked = true
+        binding.radioButtonMax.isChecked = true
         updateDisplayMetric(Metric.POSITIVE)
     }
 
@@ -174,8 +176,8 @@ class MainActivity : AppCompatActivity() {
             Metric.POSITIVE -> covidData.positiveIncrease
             Metric.DEATH -> covidData.deathIncrease
         }
-        tickerView.text = NumberFormat.getInstance().format(numCases)
+        binding.tickerView.text = NumberFormat.getInstance().format(numCases)
         val outputDateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.US)
-        tvDateLabel.text = outputDateFormat.format(covidData.dateChecked)
+        binding.tvDateLabel.text = outputDateFormat.format(covidData.dateChecked)
     }
 }
